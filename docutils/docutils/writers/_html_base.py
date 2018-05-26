@@ -1587,6 +1587,90 @@ class HTMLTranslator(nodes.NodeVisitor):
     def depart_version(self, node):
         self.depart_docinfo_item()
 
+    def visit_form(self, node):
+        atts = {}
+        allowed_atts = {'class', 'name', 'action', 'target', 'method', 'accept-charset', 'enctype'}
+        for allowed_att in allowed_atts:
+            if allowed_att in node:
+                atts[allowed_att] = node[allowed_att]
+        self.body.append(
+            self.starttag(node, 'form', '', **atts))
+
+    def depart_form(self, node):
+        self.body.append('</form>\n')
+
+    def visit_form_input(self, node):
+        atts = {}
+        allowed_atts = {'type', 'checkbox', 'radio', 'name', 'value', 'class', 'checked', 'size'}
+        for allowed_att in allowed_atts:
+            if allowed_att in node:
+                atts[allowed_att] = node[allowed_att]
+        if 'formid' in node:
+                atts['ids'] = [node['formid']]
+        self.body.append(
+            self.starttag(node, 'input', '', **atts))
+
+    def depart_form_input(self, node):
+        self.body.append('</input>\n')
+
+    def visit_form_textarea(self, node):
+        atts = {}
+        allowed_atts = {'name', 'class', 'rows', 'cols'}
+        for allowed_att in allowed_atts:
+            if allowed_att in node:
+                atts[allowed_att] = node[allowed_att]
+        if 'formid' in node:
+                atts['ids'] = [node['formid']]
+        self.body.append(
+            self.starttag(node, 'textarea', '', **atts))
+
+    def depart_form_textarea(self, node):
+        self.body.append('</textarea>\n')
+
+
+    def visit_form_select(self, node):
+        atts = {}
+        allowed_atts = {'name', 'value', 'class'}
+        for allowed_att in allowed_atts:
+            if allowed_att in node:
+                atts[allowed_att] = node[allowed_att]
+        if 'formid' in node:
+                atts['ids'] = [node['formid']]
+        self.body.append(
+            self.starttag(node, 'select', '', **atts))
+
+    def depart_form_select(self, node):
+        self.body.append('</select>\n')
+
+    def visit_form_option(self, node):
+        atts = {}
+        allowed_atts = {'disabled', 'label', 'value', 'selected'}
+        for allowed_att in allowed_atts:
+            if allowed_att in node:
+                atts[allowed_att] = node[allowed_att]
+        if 'formid' in node:
+                atts['ids'] = [node['formid']]
+        self.body.append(
+            self.starttag(node, 'option', '', **atts))
+
+    def depart_form_option(self, node):
+        self.body.append('</option>\n')
+
+
+    def visit_form_label(self, node):
+        atts = {}
+        allowed_atts = {'for', 'form'}
+        for allowed_att in allowed_atts:
+            if allowed_att in node:
+                atts[allowed_att] = node[allowed_att]
+        self.body.append(
+            self.starttag(node, 'label', '', **atts))
+
+    def depart_form_label(self, node):
+        self.body.append('</label>\n')
+
+
+
     def unimplemented_visit(self, node):
         raise NotImplementedError('visiting unimplemented node type: %s'
                                   % node.__class__.__name__)
