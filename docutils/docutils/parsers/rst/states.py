@@ -1384,14 +1384,14 @@ class Body(RSTState):
     def form_textarea(self, match, context, next_state):
         node = nodes.form_textarea()
         if match.group(8) is not None:
-            node = nodes.form_textarea('',match.group(8))
+            node['value'] = match.group(8)
         elif match.group(9) is not None:
             if match.group(9) != '':
-                node = nodes.form_textarea('',match.group(9))
+                node['value'] = match.group(9)
         if match.group(2) is not None:
-            node['rows'] = match.group(2)
+            node['cols'] = match.group(2)
         if match.group(3) is not None:
-            node['cols'] = match.group(3)
+            node['rows'] = match.group(3)
         if match.group(5) is not None:
             node['name'] = match.group(5)
         elif match.group(6) is not None:

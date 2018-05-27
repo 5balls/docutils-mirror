@@ -20,6 +20,10 @@ class form(Element):
     local_attributes = None
     pass
 
+# phpmode can be:
+# 'off' no php is inserted in the output (default)
+# 'checkandembedvalue' Values received via get/post are tested for existance and put in place else the default value is put in place
+# 'embedvalue' Values received via get/post are put in place without testing (This assumes previous check of $POST_, $GET_, ... variable and does ignores the default values)
 
 class Form(Directive):
     has_content = True
@@ -31,7 +35,9 @@ class Form(Directive):
                    'target': directives.unchanged,
                    'method': directives.unchanged,
                    'accept-charset': directives.unchanged,
-                   'enctype': directives.unchanged}
+                   'enctype': directives.unchanged,
+                   'phpmode': directives.unchanged,
+                   'phpvar': directives.unchanged}
     def run(self):
         if not self.content:
             warning = self.state_machine.reporter.warning(
@@ -41,6 +47,8 @@ class Form(Directive):
         for option in self.option_spec:
             if option in self.options:
                 node[option] = self.options[option]
+        if 'phpmode' not in node:
+            node['phpmode'] = 'off'
         self.state.nested_parse(self.content, self.content_offset, node)
 	return [node]
 

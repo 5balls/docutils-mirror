@@ -267,8 +267,35 @@ class HTMLTranslator(nodes.NodeVisitor):
         # Use only named entities known in both XML and HTML
         # other characters are automatically encoded "by number" if required.
         # @@@ A codec to do these and all other HTML entities would be nice.
+
+        # Filter out XML processing instructions from encoding
+        # TODO: <?xml, ... should be treated differently, right now it
+        # is treated as an processing instruction as well, which is
+        # wrong.
+        # TODO: The code assumes everything is valid input. Some error
+        # handling would be nice.
         text = unicode(text)
-        return text.translate(self.special_characters)
+        split = re.split('(?:(<\?[a-zA-Z]+ )|(\?>))', text)
+        if len(split) == 1:
+            # There is no processing instruction in the string, so we can encode
+            # everything:
+            return text.translate(self.special_characters)
+        else:
+            compose_string = ''
+            # We have two capture groups, so every third item is a
+            # match:
+            for matchindex in range(0,(len(split)-(len(split)%3))/3):
+                stext = split[3*matchindex]
+                cg1 = split[3*matchindex + 1]
+                cg2 = split[3*matchindex + 2]
+                if cg1 is not None:
+                    compose_string += stext.translate(self.special_characters) + cg1
+                else:
+                    compose_string += stext + cg2
+            # There may be text after the last match:
+            if len(split)%3 != 0:
+                compose_string += split[-1].translate(self.special_characters)
+            return compose_string
 
     def cloak_mailto(self, uri):
         """Try to hide a mailto: URL from harvesters."""
@@ -1587,6 +1614,65 @@ class HTMLTranslator(nodes.NodeVisitor):
     def depart_version(self, node):
         self.depart_docinfo_item()
 
+    def form_php_get_form_node(self, node):
+        form_parent_node = node.parent
+        while form_parent_node.tagname != 'form':
+            form_parent_node = form_parent_node.parent
+        return form_parent_node
+
+    def form_php_get_phpvar(self, form_node):
+        if 'phpvar' in form_node:
+            return form_node['phpvar']
+        # Default method is 'get'
+        if 'method' in form_node:
+            if form_node['method'] == 'post':
+                return '$POST_'
+        return '$GET_'
+
+    def form_php_array_split(self, string):
+        node_namesplit = re.split('\[', string, 1)
+        node_name = node_namesplit[0]
+        if len(node_namesplit) == 2:
+            node_nameindex = '[' + node_namesplit[1]
+        else:
+            node_nameindex = ''
+        return [node_name, node_nameindex]
+
+    def form_php_value(self, node, nameattr, valueattr):
+        form_node = self.form_php_get_form_node(node)
+        phpmode = form_node['phpmode']
+        phpvar = self.form_php_get_phpvar(form_node)
+        node_name, node_nameindex = self.form_php_array_split(node[nameattr])
+        if valueattr in node:
+            if phpmode == 'checkandembedvalue':
+                return "<?php if(" + phpvar + "['" + node_name + "']) echo " + phpvar + "['" + node_name +  "']" + node_nameindex + "; else echo '" + node[valueattr].translate(self.special_characters) + "'; ?>"
+            elif phpmode == 'embedvalue':
+                return "<?php echo " + phpvar + "['" + node_name +  "']" + node_nameindex + "; ?>"
+            elif phpmode == 'off':
+                return node[valueattr]
+        else:
+            if phpmode == 'checkandembedvalue':
+                return "<?php if(" + phpvar + "['" + node_name + "']) echo " + phpvar + "['" + node_name +  "']" + node_nameindex + "; ?>"
+            elif phpmode == 'embedvalue':
+                return "<?php echo " + phpvar + "['" + node_name +  "']" + node_nameindex + "; ?>"
+            else:
+                return ''
+
+    def form_php_checked(self, node, nameattr, valueattr, checkedattr):
+        form_node = self.form_php_get_form_node(node)
+        phpmode = form_node['phpmode']
+        phpvar = self.form_php_get_phpvar(form_node)
+        node_name, node_nameindex = self.form_php_array_split(node[nameattr])
+        if checkedattr in node:
+            if phpmode == 'checkandembedvalue':
+                return "<?php if(" + phpvar + "['" + node_name + "']){if(strcmp(" + phpvar + "['" + node_name + "']" + node_nameindex + ",'" + node[valueattr] + "')==0) echo 'checked';} else echo '" + node[checkedattr] + "'; ?>"
+            if phpmode == 'embedvalue':
+                return "<?php if(strcmp(" + phpvar + "['" + node_name + "']" + node_nameindex + ",'" + node[valueattr] + "')==0) echo 'checked'; ?>"
+            else:
+                return node[checkedattr]
+        else:
+            return ''
+
     def visit_form(self, node):
         atts = {}
         allowed_atts = {'class', 'name', 'action', 'target', 'method', 'accept-charset', 'enctype'}
@@ -1601,12 +1687,16 @@ class HTMLTranslator(nodes.NodeVisitor):
 
     def visit_form_input(self, node):
         atts = {}
-        allowed_atts = {'type', 'checkbox', 'radio', 'name', 'value', 'class', 'checked', 'size'}
+        atts['value'] = self.form_php_value(node, 'name', 'value')
+        allowed_atts = {'type', 'checkbox', 'radio', 'name', 'class', 'size'}
         for allowed_att in allowed_atts:
             if allowed_att in node:
                 atts[allowed_att] = node[allowed_att]
         if 'formid' in node:
                 atts['ids'] = [node['formid']]
+        if 'type' in node:
+            if node['type'] == 'checkbox' or node['type'] == 'radio':
+                atts['checked'] = self.form_php_checked(node, 'name', 'value', 'checked')
         self.body.append(
             self.starttag(node, 'input', '', **atts))
 
@@ -1615,6 +1705,7 @@ class HTMLTranslator(nodes.NodeVisitor):
 
     def visit_form_textarea(self, node):
         atts = {}
+        textarea_value = self.form_php_value(node, 'name', 'value')
         allowed_atts = {'name', 'class', 'rows', 'cols'}
         for allowed_att in allowed_atts:
             if allowed_att in node:
@@ -1622,15 +1713,18 @@ class HTMLTranslator(nodes.NodeVisitor):
         if 'formid' in node:
                 atts['ids'] = [node['formid']]
         self.body.append(
-            self.starttag(node, 'textarea', '', **atts))
+            self.starttag(node, 'textarea', textarea_value, **atts))
 
     def depart_form_textarea(self, node):
         self.body.append('</textarea>\n')
 
 
+
+
     def visit_form_select(self, node):
         atts = {}
-        allowed_atts = {'name', 'value', 'class'}
+        atts['value'] = self.form_php_value(node, 'name', 'value')
+        allowed_atts = {'name', 'class'}
         for allowed_att in allowed_atts:
             if allowed_att in node:
                 atts[allowed_att] = node[allowed_att]
