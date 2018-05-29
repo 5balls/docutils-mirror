@@ -1664,12 +1664,15 @@ class HTMLTranslator(nodes.NodeVisitor):
         phpvar = self.form_php_get_phpvar(form_node)
         node_name, node_nameindex = self.form_php_array_split(node[nameattr])
         if checkedattr in node:
-            if phpmode == 'checkandembedvalue':
-                return "<?php if(" + phpvar + "['" + node_name + "']){if(strcmp(" + phpvar + "['" + node_name + "']" + node_nameindex + ",'" + node[valueattr] + "')==0) echo 'checked';} else echo '" + node[checkedattr] + "'; ?>"
-            if phpmode == 'embedvalue':
-                return "<?php if(strcmp(" + phpvar + "['" + node_name + "']" + node_nameindex + ",'" + node[valueattr] + "')==0) echo 'checked'; ?>"
-            else:
-                return node[checkedattr]
+# PHP disabled here , because it is broken right now (because of weird
+# html compability quirks with checked attribute - have to do this
+# different)
+#            if phpmode == 'checkandembedvalue':
+#                return "<?php if(" + phpvar + "['" + node_name + "']){if(strcmp(" + phpvar + "['" + node_name + "']" + node_nameindex + ",'" + node[valueattr] + "')==0) echo 'checked';} else echo '" + node[checkedattr] + "'; ?>"
+#            if phpmode == 'embedvalue':
+#                return "<?php if(strcmp(" + phpvar + "['" + node_name + "']" + node_nameindex + ",'" + node[valueattr] + "')==0) echo 'checked'; ?>"
+#            else:
+            return node[checkedattr]
         else:
             return ''
 
@@ -1696,7 +1699,9 @@ class HTMLTranslator(nodes.NodeVisitor):
                 atts['ids'] = [node['formid']]
         if 'type' in node:
             if node['type'] == 'checkbox' or node['type'] == 'radio':
-                atts['checked'] = self.form_php_checked(node, 'name', 'value', 'checked')
+                checked_value = self.form_php_checked(node, 'name', 'value', 'checked')
+                if checked_value != '':
+                    atts['checked'] = checked_value
         self.body.append(
             self.starttag(node, 'input', '', **atts))
 
