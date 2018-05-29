@@ -1141,6 +1141,7 @@ class Body(RSTState):
 	  'form_checkbox': r'^\[([ \*xX])\][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
 	  'form_radio': r'^\(([ \*])\)[ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
           'form_text': r'^\[(([ _]{2,})|[_]([0-9]+)[_])\][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
+          'form_date': r'^\[ (YYYY-MM-DD) \][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
           'form_textarea': r'^\[([_]([0-9]+)x([0-9]+)[_])\][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
           'form_password': r'^\[(([ \*]{2,})|[\*]([0-9]+)[\*])\][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
           'form_submitreset': r'^\[ ((OK|Ok|ok)|([xX])) \][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
@@ -1161,6 +1162,7 @@ class Body(RSTState):
           'form_checkbox',
           'form_radio',
           'form_text',
+          'form_date',
           'form_textarea',
           'form_password',
           'form_submitreset',
@@ -1380,6 +1382,35 @@ class Body(RSTState):
             self.parent += node
 
         return context, next_state, []
+
+    def form_date(self, match, context, next_state):
+        node = nodes.form_input()
+        node['type'] = 'date'
+        if match.group(3) is not None:
+            node['name'] = match.group(3)
+        elif match.group(4) is not None:
+            node['name'] = match.group(4)
+        if match.group(6) is not None:
+            node['value'] = match.group(6)
+        elif match.group(7) is not None:
+            if match.group(7) != '':
+                node['value'] = match.group(7)
+        if match.group(10) is not None:
+            node['formid'] = match.group(10)
+        elif match.group(11) is not None:
+            node['formid'] = match.group(11)
+        if match.group(12) is not None:
+            label_node = nodes.form_label('', match.group(12))
+            label_node['for'] = node['formid']
+            line_node = nodes.line()
+            line_node += label_node
+            line_node += node
+            self.parent += line_node
+        else:
+            self.parent += node
+
+        return context, next_state, []
+
 
     def form_textarea(self, match, context, next_state):
         node = nodes.form_textarea()
