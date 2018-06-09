@@ -275,6 +275,8 @@ class HTMLTranslator(nodes.NodeVisitor):
         # TODO: The code assumes everything is valid input. Some error
         # handling would be nice.
         text = unicode(text)
+	if not self.settings.raw_enabled:
+            return text.translate(self.special_characters)
         split = re.split('(?:(<\?[a-zA-Z]+ )|(\?>))', text)
         if len(split) == 1:
             # There is no processing instruction in the string, so we can encode
