@@ -174,7 +174,8 @@ class Raw(Directive):
     final_argument_whitespace = True
     option_spec = {'file': directives.path,
                    'url': directives.uri,
-                   'encoding': directives.encoding}
+                   'encoding': directives.encoding,
+                   'position': directives.unchanged}
     has_content = True
 
     def run(self):
@@ -242,6 +243,8 @@ class Raw(Directive):
         else:
             # This will always fail because there is no content.
             self.assert_has_content()
+        if 'position' in self.options:
+            attributes['position'] = self.options['position']
         raw_node = nodes.raw('', text, **attributes)
         (raw_node.source,
         raw_node.line) = self.state_machine.get_source_and_line(self.lineno)
