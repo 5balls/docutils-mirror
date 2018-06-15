@@ -1634,6 +1634,19 @@ class HTMLTranslator(nodes.NodeVisitor):
                 return '$POST_'
         return '$GET_'
 
+    def form_php_get_phpvalidvar(self, form_node):
+        if 'phpvalidvar' in form_node:
+            return form_node['phpvalidvar']
+        else:
+            return ''
+
+    def form_php_get_phpvalidvarstring(self, form_node):
+        if 'phpvalidvarstring' in form_node:
+            return form_node['phpvalidvarstring']
+        else:
+            return ''
+
+
     def form_php_array_split(self, string):
         node_namesplit = re.split('\[', string, 1)
         node_name = node_namesplit[0]
@@ -1642,6 +1655,28 @@ class HTMLTranslator(nodes.NodeVisitor):
         else:
             node_nameindex = ''
         return [node_name, node_nameindex]
+
+    def form_phpvalidstring_value(self, node, nameattr):
+        form_node = self.form_php_get_form_node(node)
+        phpmode = form_node['phpmode']
+        phpvalidvar = self.form_php_get_phpvalidvar(form_node)
+        phpvalidvarstring = self.form_php_get_phpvalidvarstring(form_node)
+        node_name, node_nameindex = self.form_php_array_split(node[nameattr])
+        if phpmode == 'off':
+            return ""
+        else:
+            return "<?php if(!" + phpvalidvar + "['" + node_name + "']" + node_nameindex + ") echo " + phpvalidvarstring + "['" + node_name + "']" + node_nameindex + "; ?>"
+
+    def form_phpvalid_value(self, node, nameattr):
+        form_node = self.form_php_get_form_node(node)
+        phpmode = form_node['phpmode']
+        phpvalidvar = self.form_php_get_phpvalidvar(form_node)
+        node_name, node_nameindex = self.form_php_array_split(node[nameattr])
+        if phpmode == 'off':
+            return ""
+        else:
+            return "<?php if(!" + phpvalidvar + "['" + node_name + "']" + node_nameindex + ") echo 'form-wrong-input '; ?>"
+
 
     def form_php_value(self, node, nameattr, valueattr):
         form_node = self.form_php_get_form_node(node)
@@ -1702,6 +1737,9 @@ class HTMLTranslator(nodes.NodeVisitor):
                 atts[allowed_att] = node[allowed_att]
         if 'formid' in node:
                 atts['ids'] = [node['formid']]
+        phpvalidvar = self.form_phpvalid_value(node, 'name')
+        if phpvalidvar != '':
+            atts['class'] = phpvalidvar
         if 'type' in node:
             if node['type'] == 'checkbox' or node['type'] == 'radio':
                 checked_value = self.form_php_checked(node, 'name', 'value', 'checked')
@@ -1767,8 +1805,13 @@ class HTMLTranslator(nodes.NodeVisitor):
         for allowed_att in allowed_atts:
             if allowed_att in node:
                 atts[allowed_att] = node[allowed_att]
+
+        phpvalidvarstring = self.form_phpvalidstring_value(node, 'name')
+        phpvalidvar = self.form_phpvalid_value(node, 'name')
+        if phpvalidvar != '':
+            atts['class'] = phpvalidvar
         self.body.append(
-            self.starttag(node, 'label', '', **atts))
+            self.starttag(node, 'label', phpvalidvarstring, **atts))
 
     def depart_form_label(self, node):
         self.body.append('</label>\n')

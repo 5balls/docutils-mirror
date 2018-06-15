@@ -37,7 +37,9 @@ class Form(Directive):
                    'accept-charset': directives.unchanged,
                    'enctype': directives.unchanged,
                    'phpmode': directives.unchanged,
-                   'phpvar': directives.unchanged}
+                   'phpvar': directives.unchanged,
+                   'phpvalidvar': directives.unchanged,
+                   'phpvalidvarstring': directives.unchanged}
     def run(self):
         if not self.content:
             warning = self.state_machine.reporter.warning(

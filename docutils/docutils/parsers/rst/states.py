@@ -1315,6 +1315,7 @@ class Body(RSTState):
         if match.group(12) is not None:
             label_node = nodes.form_label('', match.group(12))
             label_node['for'] = node['formid']
+            label_node['name'] = node['name']
             line_node = nodes.line()
             line_node += node
             line_node += label_node
@@ -1342,6 +1343,7 @@ class Body(RSTState):
         if match.group(12) is not None:
             label_node = nodes.form_label('', match.group(12))
             label_node['for'] = node['formid']
+            label_node['name'] = node['name']
             line_node = nodes.line()
             line_node += node
             line_node += label_node
@@ -1374,6 +1376,7 @@ class Body(RSTState):
         if match.group(14) is not None:
             label_node = nodes.form_label('', match.group(14))
             label_node['for'] = node['formid']
+            label_node['name'] = node['name']
             line_node = nodes.line()
             line_node += label_node
             line_node += node
@@ -1402,6 +1405,7 @@ class Body(RSTState):
         if match.group(12) is not None:
             label_node = nodes.form_label('', match.group(12))
             label_node['for'] = node['formid']
+            label_node['name'] = node['name']
             line_node = nodes.line()
             line_node += label_node
             line_node += node
@@ -1434,6 +1438,7 @@ class Body(RSTState):
         if match.group(14) is not None:
             label_node = nodes.form_label('', match.group(14))
             label_node['for'] = node['formid']
+            label_node['name'] = node['name']
             line_node = nodes.line()
             label_node_line = nodes.line() # Put label on a line above (looks IMO better)
             label_node_line += label_node
@@ -1469,6 +1474,7 @@ class Body(RSTState):
         if match.group(14) is not None:
             label_node = nodes.form_label('', match.group(14))
             label_node['for'] = node['formid']
+            label_node['name'] = node['name']
             line_node = nodes.line()
             line_node += label_node
             line_node += node
@@ -1500,6 +1506,7 @@ class Body(RSTState):
         if match.group(14) is not None:
             label_node = nodes.form_label('', match.group(14))
             label_node['for'] = node['formid']
+            label_node['name'] = node['name']
             line_node = nodes.line()
             line_node += label_node
             line_node += node
@@ -1522,6 +1529,7 @@ class Body(RSTState):
         if match.group(8) is not None:
             label_node = nodes.form_label('', match.group(8))
             label_node['for'] = select_node['formid']
+            label_node['name'] = select_node['name']
             line_node = nodes.line()
             line_node += label_node
             line_node += select_node
