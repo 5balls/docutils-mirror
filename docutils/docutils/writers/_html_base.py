@@ -1816,6 +1816,15 @@ class HTMLTranslator(nodes.NodeVisitor):
     def depart_form_label(self, node):
         self.body.append('</label>\n')
 
+    def visit_navigation(self, node):
+        atts = {}
+        atts['class'] = 'navigation'
+        self.body.append(
+            self.starttag(node, 'nav', '', **atts))
+
+    def depart_navigation(self, node):
+        self.body.append('</nav>\n')
+
 
 
     def unimplemented_visit(self, node):
