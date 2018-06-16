@@ -1802,6 +1802,15 @@ class inline(Inline, TextElement): pass
 class problematic(Inline, TextElement): pass
 class generated(Inline, TextElement): pass
 
+class form_input(Element): pass # html only
+class form_textarea(TextElement): pass # html only
+class form_button(Element): pass # not implemented yet
+class form_select(Element): pass # html only
+class form_option(TextElement): pass # html only
+class form_optgroup(Element): pass # not implemented yet
+class form_fieldset(Element): pass # not implemented yet
+class form_label(TextElement): pass # html only
+
 
 # ========================================
 #  Auxiliary Classes, Functions, and Data
@@ -1819,6 +1828,7 @@ node_class_names = """
     emphasis entry enumerated_list error
     field field_body field_list field_name figure footer
         footnote footnote_reference
+    form form_input form_textarea form_button form_select form_option form_optgroup form_fieldset form_label
     generated
     header hint
     image important inline

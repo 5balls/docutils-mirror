@@ -1138,6 +1138,14 @@ class Body(RSTState):
           'enumerator': r'(%(parens)s|%(rparen)s|%(period)s)( +|$)' % pats,
           'field_marker': r':(?![: ])([^:\\]|\\.|:(?!([ `]|$)))*(?<! ):( +|$)',
           'option_marker': r'%(option)s(, %(option)s)*(  +| ?$)' % pats,
+	  'form_checkbox': r'^\[([ \*xX])\][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
+	  'form_radio': r'^\(([ \*])\)[ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
+          'form_text': r'^\[(([ _]{2,})|[_]([0-9]+)[_])\][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
+          'form_date': r'^\[ (YYYY-MM-DD) \][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
+          'form_textarea': r'^\[([_]([0-9]+)x([0-9]+)[_])\][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
+          'form_password': r'^\[(([ \*]{2,})|[\*]([0-9]+)[\*])\][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
+          'form_submitreset': r'^\[ ((OK|Ok|ok)|([xX])) \][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
+          'form_select': r'^\\\/[ ](([^ "\n]+)|"([^"\n]+)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
           'doctest': r'>>>( +|$)',
           'line_block': r'\|( +|$)',
           'grid_table_top': grid_table_top_pat,
@@ -1151,6 +1159,14 @@ class Body(RSTState):
           'enumerator',
           'field_marker',
           'option_marker',
+          'form_checkbox',
+          'form_radio',
+          'form_text',
+          'form_date',
+          'form_textarea',
+          'form_password',
+          'form_submitreset',
+          'form_select',
           'doctest',
           'line_block',
           'grid_table_top',
@@ -1278,6 +1294,277 @@ class Body(RSTState):
         if not blank_finish:
             self.parent += self.unindent_warning('Bullet list')
         return [], next_state, []
+
+    def form_checkbox(self, match, context, next_state):
+        node = nodes.form_input()
+        node['type'] = 'checkbox'
+        if match.group(1) != ' ':
+            node['checked'] = 'checked'
+        if match.group(3) is not None:
+            node['name'] = match.group(3)
+        elif match.group(4) is not None:
+            node['name'] = match.group(4)
+        if match.group(6) is not None:
+            node['value'] = match.group(6)
+        elif match.group(7) is not None:
+            node['value'] = match.group(7)
+        if match.group(10) is not None:
+            node['formid'] = match.group(10)
+        elif match.group(11) is not None:
+            node['formid'] = match.group(11)
+        if match.group(12) is not None:
+            label_node = nodes.form_label('', match.group(12))
+            label_node['for'] = node['formid']
+            label_node['name'] = node['name']
+            line_node = nodes.line()
+            line_node += node
+            line_node += label_node
+            self.parent += line_node
+        else:
+            self.parent += node
+        return context, next_state, []
+    def form_radio(self, match, context, next_state):
+        node = nodes.form_input()
+        node['type'] = 'radio'
+        if match.group(1) != ' ':
+            node['checked'] = 'checked'
+        if match.group(3) is not None:
+            node['name'] = match.group(3)
+        elif match.group(4) is not None:
+            node['name'] = match.group(4)
+        if match.group(6) is not None:
+            node['value'] = match.group(6)
+        elif match.group(7) is not None:
+            node['value'] = match.group(7)
+        if match.group(10) is not None:
+            node['formid'] = match.group(10)
+        elif match.group(11) is not None:
+            node['formid'] = match.group(11)
+        if match.group(12) is not None:
+            label_node = nodes.form_label('', match.group(12))
+            label_node['for'] = node['formid']
+            label_node['name'] = node['name']
+            line_node = nodes.line()
+            line_node += node
+            line_node += label_node
+            self.parent += line_node
+        else:
+            self.parent += node
+        return context, next_state, []
+
+    def form_text(self, match, context, next_state):
+        node = nodes.form_input()
+        node['type'] = 'text'
+        if match.group(2) is not None:
+            if (match.group(2))[0] == '_':
+                node['size'] = len(match.group(2))
+        elif match.group(3) is not None:
+            node['size'] = match.group(3)
+        if match.group(5) is not None:
+            node['name'] = match.group(5)
+        elif match.group(6) is not None:
+            node['name'] = match.group(6)
+        if match.group(8) is not None:
+            node['value'] = match.group(8)
+        elif match.group(9) is not None:
+            if match.group(9) != '':
+                node['value'] = match.group(9)
+        if match.group(12) is not None:
+            node['formid'] = match.group(12)
+        elif match.group(13) is not None:
+            node['formid'] = match.group(13)
+        if match.group(14) is not None:
+            label_node = nodes.form_label('', match.group(14))
+            label_node['for'] = node['formid']
+            label_node['name'] = node['name']
+            line_node = nodes.line()
+            line_node += label_node
+            line_node += node
+            self.parent += line_node
+        else:
+            self.parent += node
+
+        return context, next_state, []
+
+    def form_date(self, match, context, next_state):
+        node = nodes.form_input()
+        node['type'] = 'date'
+        if match.group(3) is not None:
+            node['name'] = match.group(3)
+        elif match.group(4) is not None:
+            node['name'] = match.group(4)
+        if match.group(6) is not None:
+            node['value'] = match.group(6)
+        elif match.group(7) is not None:
+            if match.group(7) != '':
+                node['value'] = match.group(7)
+        if match.group(10) is not None:
+            node['formid'] = match.group(10)
+        elif match.group(11) is not None:
+            node['formid'] = match.group(11)
+        if match.group(12) is not None:
+            label_node = nodes.form_label('', match.group(12))
+            label_node['for'] = node['formid']
+            label_node['name'] = node['name']
+            line_node = nodes.line()
+            line_node += label_node
+            line_node += node
+            self.parent += line_node
+        else:
+            self.parent += node
+
+        return context, next_state, []
+
+
+    def form_textarea(self, match, context, next_state):
+        node = nodes.form_textarea()
+        if match.group(8) is not None:
+            node['value'] = match.group(8)
+        elif match.group(9) is not None:
+            if match.group(9) != '':
+                node['value'] = match.group(9)
+        if match.group(2) is not None:
+            node['cols'] = match.group(2)
+        if match.group(3) is not None:
+            node['rows'] = match.group(3)
+        if match.group(5) is not None:
+            node['name'] = match.group(5)
+        elif match.group(6) is not None:
+            node['name'] = match.group(6)
+        if match.group(12) is not None:
+            node['formid'] = match.group(12)
+        elif match.group(13) is not None:
+            node['formid'] = match.group(13)
+        if match.group(14) is not None:
+            label_node = nodes.form_label('', match.group(14))
+            label_node['for'] = node['formid']
+            label_node['name'] = node['name']
+            line_node = nodes.line()
+            label_node_line = nodes.line() # Put label on a line above (looks IMO better)
+            label_node_line += label_node
+            line_node += label_node_line
+            line_node += node
+            self.parent += line_node
+        else:
+            self.parent += node
+
+        return context, next_state, []
+
+    def form_password(self, match, context, next_state):
+        node = nodes.form_input()
+        node['type'] = 'password'
+        if match.group(2) is not None:
+            if (match.group(2))[0] == '_':
+                node['size'] = len(match.group(2))
+        elif match.group(3) is not None:
+            node['size'] = match.group(3)
+        if match.group(5) is not None:
+            node['name'] = match.group(5)
+        elif match.group(6) is not None:
+            node['name'] = match.group(6)
+        if match.group(8) is not None:
+            node['value'] = match.group(8)
+        elif match.group(9) is not None:
+            if match.group(9) != '':
+                node['value'] = match.group(9)
+        if match.group(12) is not None:
+            node['formid'] = match.group(12)
+        elif match.group(13) is not None:
+            node['formid'] = match.group(13)
+        if match.group(14) is not None:
+            label_node = nodes.form_label('', match.group(14))
+            label_node['for'] = node['formid']
+            label_node['name'] = node['name']
+            line_node = nodes.line()
+            line_node += label_node
+            line_node += node
+            self.parent += line_node
+        else:
+            self.parent += node
+
+        return context, next_state, []
+
+    def form_submitreset(self, match, context, next_state):
+        node = nodes.form_input()
+        if match.group(2) is not None:
+            node['type'] = 'submit'
+        elif match.group(3) is not None:
+            node['type'] = 'reset'
+        if match.group(5) is not None:
+            node['name'] = match.group(5)
+        elif match.group(6) is not None:
+            node['name'] = match.group(6)
+        if match.group(8) is not None:
+            node['value'] = match.group(8)
+        elif match.group(9) is not None:
+            if match.group(9) != '':
+                node['value'] = match.group(9)
+        if match.group(12) is not None:
+            node['formid'] = match.group(12)
+        elif match.group(13) is not None:
+            node['formid'] = match.group(13)
+        if match.group(14) is not None:
+            label_node = nodes.form_label('', match.group(14))
+            label_node['for'] = node['formid']
+            label_node['name'] = node['name']
+            line_node = nodes.line()
+            line_node += label_node
+            line_node += node
+            self.parent += line_node
+        else:
+            self.parent += node
+
+        return context, next_state, []
+
+    def form_select(self, match, context, next_state):
+        select_node = nodes.form_select()
+        if match.group(2) is not None:
+            select_node['name'] = match.group(2)
+        elif match.group(3) is not None:
+            select_node['name'] = match.group(3)
+        if match.group(6) is not None:
+            select_node['formid'] = match.group(6)
+        elif match.group(7) is not None:
+            select_node['formid'] = match.group(7)
+        if match.group(8) is not None:
+            label_node = nodes.form_label('', match.group(8))
+            label_node['for'] = select_node['formid']
+            label_node['name'] = select_node['name']
+            line_node = nodes.line()
+            line_node += label_node
+            line_node += select_node
+            node_to_add = line_node
+        else:
+            node_to_add = select_node
+
+
+        test_line = ' '
+        offset = self.state_machine.line_offset   # next line
+        while test_line != []:
+            offset += 1
+            test_line = self.state_machine.input_lines[offset:]
+            option_match = re.match('^   (([^ "\n]+)|"([^"\n]+)") (([^ "\n]+)|"([^"\n]+)")',test_line[0])
+            if option_match is None:
+                break
+            else:
+                if option_match.group(5) is not None:
+                    option_node = nodes.form_option('', option_match.group(5))
+                elif option_match.group(6) is not None:
+                    option_node = nodes.form_option('', option_match.group(6))
+                else:
+                    option_node = nodes.form_option() # Should never happen
+                if option_match.group(2) is not None:
+                    option_node['value'] = option_match.group(2)
+                elif option_match.group(3) is not None:
+                    option_node['value'] = option_match.group(3)
+                select_node += option_node
+
+        new_line = self.state_machine.abs_line_offset() + offset - self.state_machine.line_offset - 1
+        self.goto_line(new_line)
+        self.parent += node_to_add
+        return context, next_state, []
+
+
 
     def list_item(self, indent):
         if self.state_machine.line[indent:]:
