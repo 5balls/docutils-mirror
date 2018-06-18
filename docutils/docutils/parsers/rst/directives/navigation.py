@@ -50,8 +50,9 @@ class Navigation(Directive):
         cur_bullet_list_node = bullet_list()
         cur_bullet_list_node['bullet'] = '-'
         cur_nav_element = cur_bullet_list_node
-        nav_elements = []
-        nav_elements_indexless = []
+        cur_class = None
+        nav_elements = [None] * 1000
+        nav_elements_indexless = [None] * 1000
         if 'title' in self.options:
             node['title'] = self.options['title']
         else:
@@ -60,6 +61,8 @@ class Navigation(Directive):
             node['index'] = self.options['index']
         else:
             node['index'] = 0
+        if 'class' in self.options:
+            node['class'] = self.options['class']
 
         node.append(cur_bullet_list_node)
         for dirpath, dirnames, filenames in os.walk(source_base_dir):
@@ -67,14 +70,20 @@ class Navigation(Directive):
                 cur_path = os.path.join(dirpath, dirname)
                 new_depth = cur_path.count(os.sep)-source_base_dir.count(os.sep)
                 if(new_depth > old_depth):
+                    last_nav_element = cur_nav_element
+                    if cur_class is not None:
+                        cur_bullet_list_node['classes'] = cur_class
                     for nav_element in nav_elements + nav_elements_indexless:
-                        cur_bullet_list_node.append(nav_element)
-                    nav_elements = []
-                    nav_elements_indexless = []
+                        if nav_element is not None:
+                            cur_bullet_list_node.append(nav_element)
+                            last_nav_element = nav_element
+                    cur_class = None
+                    nav_elements = [None] * 1000
+                    nav_elements_indexless = [None] * 1000
                     old_depth = new_depth
                     cur_bullet_list_node = bullet_list()
                     cur_bullet_list_node['bullet'] = '-'
-                    cur_nav_element.append(cur_bullet_list_node)
+                    last_nav_element.append(cur_bullet_list_node)
 
                 rel_path = os.path.relpath(cur_path,own_abs_path)
                 rel_commonpart = os.path.commonprefix([os.path.split(cur_path)[0],own_abs_path])
@@ -85,9 +94,14 @@ class Navigation(Directive):
                     cur_file_rst_content = cur_file.read()
                     cur_file_doc_tree = publish_doctree(cur_file_rst_content, settings_overrides={'input_encoding': 'unicode'})
                     cur_file.close()
-                    cur_nav_element = cur_file_doc_tree.traverse(condition=is_navigation)[0]
+                    nav_elements_doc = cur_file_doc_tree.traverse(condition=is_navigation)
+                    if not nav_elements_doc:
+                        continue
+                    cur_nav_element = nav_elements_doc[0]
                     cur_title = cur_nav_element['title']
-                    cur_index = cur_nav_element['index']
+                    cur_index = int(cur_nav_element['index'])
+                    if 'class' in cur_nav_element:
+                        cur_class = cur_nav_element['class']
                     cur_nav_element = list_item()
                     cur_nav_element_paragraph = paragraph();
 
@@ -104,5 +118,9 @@ class Navigation(Directive):
                         nav_elements_indexless.append(cur_nav_element)
 
         for nav_element in nav_elements + nav_elements_indexless:
-            cur_bullet_list_node.append(nav_element)
+            if nav_element is not None:
+                cur_bullet_list_node.append(nav_element)
+
+        if cur_class is not None:
+            cur_bullet_list_node['classes'] = cur_class
         return [node]
