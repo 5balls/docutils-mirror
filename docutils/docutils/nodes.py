@@ -1806,6 +1806,7 @@ class form_input(Element): pass # html only
 class form_textarea(TextElement): pass # html only
 class form_button(Element): pass # not implemented yet
 class form_select(Element): pass # html only
+class form_datalist(Element): pass # html only
 class form_option(TextElement): pass # html only
 class form_optgroup(Element): pass # not implemented yet
 class form_fieldset(Element): pass # not implemented yet
@@ -1828,12 +1829,13 @@ node_class_names = """
     emphasis entry enumerated_list error
     field field_body field_list field_name figure footer
         footnote footnote_reference
-    form form_input form_textarea form_button form_select form_option form_optgroup form_fieldset form_label
+    form form_input form_textarea form_button form_select form_datalist form_option form_optgroup form_fieldset form_label
     generated
     header hint
     image important inline
     label legend line line_block list_item literal literal_block
     math math_block
+    navigation
     note
     option option_argument option_group option_list option_list_item
         option_string organization
