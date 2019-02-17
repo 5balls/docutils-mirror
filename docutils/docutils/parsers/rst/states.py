@@ -1146,6 +1146,7 @@ class Body(RSTState):
           'form_password': r'^\[(([ \*]{2,})|[\*]([0-9]+)[\*])\][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
           'form_submitreset': r'^\[ ((OK|Ok|ok)|([xX])) \][ ](([^ "\n]+)|"([^"\n]+)")[ ](([^ "\n]+)|"([^"\n]+|)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
           'form_select': r'^\\\/[ ](([^ "\n]+)|"([^"\n]+)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
+          'form_datalist': r'^\[\\/\][ ](([^ "\n]+)|"([^"\n]+)")($|[ ](([^ "\n]+)|"([^"\n]+)")[ ](.+)$)',
           'doctest': r'>>>( +|$)',
           'line_block': r'\|( +|$)',
           'grid_table_top': grid_table_top_pat,
@@ -1167,6 +1168,7 @@ class Body(RSTState):
           'form_password',
           'form_submitreset',
           'form_select',
+          'form_datalist',
           'doctest',
           'line_block',
           'grid_table_top',
@@ -1514,6 +1516,54 @@ class Body(RSTState):
         else:
             self.parent += node
 
+        return context, next_state, []
+
+    def form_datalist(self, match, context, next_state):
+        datalist_node = nodes.form_datalist()
+        if match.group(2) is not None:
+            datalist_node['name'] = match.group(2)
+        elif match.group(3) is not None:
+            datalist_node['name'] = match.group(3)
+        if match.group(6) is not None:
+            datalist_node['formid'] = match.group(6)
+        elif match.group(7) is not None:
+            datalist_node['formid'] = match.group(7)
+        if match.group(8) is not None:
+            label_node = nodes.form_label('', match.group(8))
+            label_node['for'] = datalist_node['formid']
+            label_node['name'] = datalist_node['name']
+            line_node = nodes.line()
+            line_node += label_node
+            line_node += datalist_node
+            node_to_add = line_node
+        else:
+            node_to_add = datalist_node
+
+
+        test_line = ' '
+        offset = self.state_machine.line_offset   # next line
+        while test_line != []:
+            offset += 1
+            test_line = self.state_machine.input_lines[offset:]
+            option_match = re.match('^     (([^ "\n]+)|"([^"\n]+)") (([^ "\n]+)|"([^"\n]+)")',test_line[0])
+            if option_match is None:
+                break
+            else:
+                if option_match.group(5) is not None:
+                    option_node = nodes.form_option('', option_match.group(5))
+                elif option_match.group(6) is not None:
+                    option_node = nodes.form_option('', option_match.group(6))
+                else:
+                    option_node = nodes.form_option() # Should never happen
+                if option_match.group(2) is not None:
+                    option_node['value'] = option_match.group(2)
+                elif option_match.group(3) is not None:
+                    option_node['value'] = option_match.group(3)
+                datalist_node += option_node
+
+        new_line = self.state_machine.abs_line_offset() + offset - self.state_machine.line_offset - 1
+        self.goto_line(new_line)
+        self.parent += node_to_add
         return context, next_state, []
 
     def form_select(self, match, context, next_state):

@@ -1784,6 +1784,28 @@ class HTMLTranslator(nodes.NodeVisitor):
     def depart_form_select(self, node):
         self.body.append('</select>\n')
 
+    def visit_form_datalist(self, node):
+        atts = {}
+        atts['value'] = self.form_php_value(node, 'name', 'value')
+        allowed_atts = {'name', 'class'}
+        for allowed_att in allowed_atts:
+            if allowed_att in node:
+                atts[allowed_att] = node[allowed_att]
+        if 'formid' in node:
+                atts['ids'] = [node['formid']]
+                atts['list'] = str(node['formid']) + '_list'
+        self.body.append(
+            self.starttag(node, 'input', '', **atts))
+        self.body.append('</input>\n')
+        atts_datalist = {}
+        atts_datalist['ids'] = [atts['list']]
+        self.body.append(
+            self.starttag(node, 'datalist', '', **atts_datalist))
+
+    def depart_form_datalist(self, node):
+        self.body.append('</datalist>\n')
+
+
     def visit_form_option(self, node):
         atts = {}
         allowed_atts = {'disabled', 'label', 'value', 'selected'}
