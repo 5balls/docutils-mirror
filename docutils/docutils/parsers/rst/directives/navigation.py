@@ -67,6 +67,8 @@ class Navigation(Directive):
         node.append(cur_bullet_list_node)
         for dirpath, dirnames, filenames in os.walk(source_base_dir):
             for dirname in dirnames:
+                if dirname == '.git':
+                    continue
                 cur_path = os.path.join(dirpath, dirname)
                 new_depth = cur_path.count(os.sep)-source_base_dir.count(os.sep)
                 if(new_depth > old_depth):
