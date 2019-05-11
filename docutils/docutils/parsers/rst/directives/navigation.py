@@ -14,6 +14,7 @@ __docformat__ = 'reStructuredText'
 
 import os
 import io
+import threading
 from docutils import nodes, utils
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst import directives, states
@@ -37,7 +38,8 @@ class Navigation(Directive):
     option_spec = {'class': directives.class_option,
                    'title': directives.unchanged,
                    'index': directives.unchanged,
-                   'base': directives.unchanged}
+                   'base': directives.unchanged,
+                   'language': directives.unchanged}
 
     def run(self):
         node = navigation()
@@ -46,7 +48,7 @@ class Navigation(Directive):
         own_rel_path, own_filename = os.path.split(self.state_machine.document.current_source)
         own_abs_path = os.path.join(os.getcwd(), own_rel_path)
         own_nav_dir = os.path.relpath(own_abs_path, source_base_dir)
-        old_depth = 1
+        self.old_depth = 1
         cur_bullet_list_node = bullet_list()
         cur_bullet_list_node['bullet'] = '-'
         cur_nav_element = cur_bullet_list_node
@@ -63,15 +65,21 @@ class Navigation(Directive):
             node['index'] = 0
         if 'class' in self.options:
             node['class'] = self.options['class']
+        if 'language' in self.options:
+            node['language'] = self.options['language']
+        else:
+            node['language'] = 'de'
 
         node.append(cur_bullet_list_node)
         for dirpath, dirnames, filenames in os.walk(source_base_dir):
             for dirname in dirnames:
-                if dirname == '.git':
+                if '.git' in dirname:
                     continue
                 cur_path = os.path.join(dirpath, dirname)
+                if '.git' in cur_path:
+                    continue
                 new_depth = cur_path.count(os.sep)-source_base_dir.count(os.sep)
-                if(new_depth > old_depth):
+                if(new_depth > self.old_depth):
                     last_nav_element = cur_nav_element
                     if cur_class is not None:
                         cur_bullet_list_node['classes'] = cur_class
@@ -82,7 +90,7 @@ class Navigation(Directive):
                     cur_class = None
                     nav_elements = [None] * 1000
                     nav_elements_indexless = [None] * 1000
-                    old_depth = new_depth
+                    self.old_depth = new_depth
                     cur_bullet_list_node = bullet_list()
                     cur_bullet_list_node['bullet'] = '-'
                     last_nav_element.append(cur_bullet_list_node)
@@ -91,7 +99,11 @@ class Navigation(Directive):
                 rel_commonpart = os.path.commonprefix([os.path.split(cur_path)[0],own_abs_path])
                 if not (rel_commonpart == os.path.split(cur_path)[0]):
                     continue
-                for filename in filenames:
+                (_,_,real_filenames) = next(os.walk(os.path.join(dirpath, dirname)))
+                for filename in real_filenames:
+                    if (filename[:-2] + node['language'] in real_filenames and filename[-2:] != node['language']):
+                        os.write(2,'nok %i %s %s %s %s %s\n' % (new_depth, filename[:-2] + node['language'], real_filenames, node['language'], filename[-2:], filename))
+                        continue
                     cur_file = io.open(os.path.join(dirpath, dirname, filename), mode='r', encoding='utf-8')
                     cur_file_rst_content = cur_file.read()
                     cur_file_doc_tree = publish_doctree(cur_file_rst_content, settings_overrides={'input_encoding': 'unicode'})
